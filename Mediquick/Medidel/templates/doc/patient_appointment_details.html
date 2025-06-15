@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="content container-fluid">
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h3 class="page-title">Appointment Details</h3>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'doctor_home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'view_appointment' %}">Appointments</a></li>
+                    <li class="breadcrumb-item active">Appointment Details</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    {% for i in patientdetails %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="appointment-info">
+                                <h4>Appointment Information</h4>
+                                <table class="table">
+                                    <tr>
+                                        <th>Appointment Number</th>
+                                        <td>{{ i.appointmentnumber }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status</th>
+                                        <td>
+                                            <span class="badge {% if i.status == '0' %}badge-warning{% elif i.status == 'Approved' %}badge-success{% elif i.status == 'Cancelled' %}badge-danger{% elif i.status == 'Completed' %}badge-info{% endif %}">
+                                                {{ i.get_status_display|default:i.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Appointment Date</th>
+                                        <td>{{ i.date_of_appointment }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Appointment Time</th>
+                                        <td>{{ i.time_of_appointment }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Created On</th>
+                                        <td>{{ i.created_at }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="patient-info">
+                                <h4>Patient Information</h4>
+                                <table class="table">
+                                    <tr>
+                                        <th>Patient Name</th>
+                                        <td>{{ i.fullname }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email</th>
+                                        <td>{{ i.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Mobile</th>
+                                        <td>{{ i.mobilenumber }}</td>
+                                    </tr>
+                                    {% if i.patient %}
+                                    <tr>
+                                        <th>Blood Group</th>
+                                        <td>{{ i.patient.blood_group|default:"Not provided" }}</td>
+                                    </tr>
+                                    {% if i.patient.date_of_birth %}
+                                    <tr>
+                                        <th>Age</th>
+                                        <td>{{ i.patient.date_of_birth|timesince }} old</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="additional-info">
+                                <h4>Additional Information</h4>
+                                <table class="table">
+                                    <tr>
+                                        <th>Patient's Message</th>
+                                        <td>{{ i.additional_msg|default:"No additional message" }}</td>
+                                    </tr>
+                                    {% if i.status != '0' %}
+                                    <tr>
+                                        <th>Doctor's Remark</th>
+                                        <td>{{ i.remark|default:"No remarks added yet" }}</td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if i.status == 'Completed' %}
+                                    <tr>
+                                        <th>Prescription</th>
+                                        <td>{{ i.prescription|default:"No prescription added" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Recommended Tests</th>
+                                        <td>{{ i.recommendedtest|default:"No tests recommended" }}</td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if i.status == '0' %}
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Update Appointment Status</h4>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" action="{% url 'patient_appointment_details_remark' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="pat_id" value="{{ i.id }}">
+                                        <div class="form-group">
+                                            <label>Doctor's Remark</label>
+                                            <textarea name="remark" class="form-control" rows="3" required></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Status</label>
+                                            <select name="status" class="form-control" required>
+                                                <option value="">Select Status</option>
+                                                <option value="Approved">Approve</option>
+                                                <option value="Cancelled">Cancel</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Update Status</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% elif i.status == 'Approved' %}
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Complete Appointment</h4>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" action="{% url 'patientappointmentprescription' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="pat_id" value="{{ i.id }}">
+                                        <div class="form-group">
+                                            <label>Prescription</label>
+                                            <textarea name="prescription" class="form-control" rows="3" required></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Recommended Tests</label>
+                                            <textarea name="recommendedtest" class="form-control" rows="3"></textarea>
+                                        </div>
+                                        <input type="hidden" name="status" value="Completed">
+                                        <button type="submit" class="btn btn-success">Complete Appointment</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Force remove any existing backdrops
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open');
+    
+    // Initialize modal without backdrop
+    $('#myModal').modal({
+        backdrop: false,
+        keyboard: true,
+        show: false
+    });
+    
+    // When Take Action button is clicked
+    $('[data-toggle="modal"]').on('click', function() {
+        // Remove any existing backdrops
+        $('.modal-backdrop').remove();
+    });
+    
+    // When closing modal
+    $('#myModal').on('hide.bs.modal', function() {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+        $(this).find('form')[0].reset();
+    });
+});
+</script>
+{% endblock %}
